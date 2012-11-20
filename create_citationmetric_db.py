@@ -82,6 +82,8 @@ def get_citation_metrics(citations):
     return h_index, total_citations, avg_cites, median_cites, limit_exceeded_flag
 
 def get_existingscientists_fromdb():
+    """extracts names of scientists that have already been processed and inserted into
+    the database"""
     con=dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
     existing_data=cur.execute("SELECT name FROM ecologist_metrics")
