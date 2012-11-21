@@ -1,9 +1,11 @@
+from __future__ import division
 import csv
 from urllib import urlopen
 from bs4 import BeautifulSoup
 import numpy as np
 import re
 import sqlite3 as dbapi
+import time
 
 def import_ecologists(filename):
     """import local file containing a Google Scholar profile in html format"""
@@ -23,7 +25,8 @@ def get_Scholarprofile(url):
     html_file = urlopen(google_html).read()
     pubs_from_html=extract_paperdata(html_file)
     i=100
-    while i < 700:
+    more_papers = True
+    while more_papers:
         str_i=str(i)
         iterable_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&pagesize=100&view_op=list_works&cstart=" + str_i
         html_file=urlopen(iterable_html).read()
@@ -32,7 +35,8 @@ def get_Scholarprofile(url):
             pubs_from_html = np.vstack([pubs_from_html, temp_pubs])
             i += 100
         else:
-            return pubs_from_html
+            more_papers = False
+    return pubs_from_html
 
 def extract_paperdata(profile_file):
     """parses out paper information from the profile html and outputs numpy array"""
@@ -101,21 +105,27 @@ def insert_newdata_into_db(ecologist):
     h_index, total_citations, avg_cites, median_cites, paper_limit = get_citation_metrics(citations)
     ecologist_data = [ecologist[0], ecologist[4], len(GS_profile), h_index, 
                     total_citations, avg_cites, median_cites, paper_limit]
+    con = con=dbapi.connect('citation_metric.sqlite')
+    cur = con.cursor()
     cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?,?)", (ecologist[0],ecologist[4],len(GS_profile),h_index,total_citations,avg_cites, median_cites, paper_limit,))
     con.commit()    
     
 """main code"""
-filename_input = "test_profiles.csv"
+#filename_input = "Google_ecology.csv"
+#ecologists = import_ecologists(filename_input)
+#processed_ecologists = get_existingscientists_fromdb()
+#for ecologist in ecologists:
+#    if ecologist[0] not in processed_ecologists:
+#        insert_newdata_into_db(ecologist)
+        
+#
+#testing particular entries
+filename_input = "problem_ecologist.csv"
 ecologists = import_ecologists(filename_input)
 processed_ecologists = get_existingscientists_fromdb()
 for ecologist in ecologists:
     if ecologist[0] not in processed_ecologists:
         insert_newdata_into_db(ecologist)
-        
-con.close()
-
-
-    
 
 
 
