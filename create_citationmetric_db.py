@@ -1,11 +1,13 @@
 from __future__ import division
+
 import csv
 from urllib import urlopen
-from bs4 import BeautifulSoup
-import numpy as np
 import re
 import sqlite3 as dbapi
 import time
+
+import numpy as np
+from bs4 import BeautifulSoup
 
 def import_ecologists(filename):
     """import local file containing a Google Scholar profile in html format"""
@@ -61,14 +63,6 @@ def get_citations(paper_data):
         num_zeros -= 1
     return citations
 
-def median(mylist):
-    """calculates a median from a list of numbers"""
-    sorts = sorted(mylist)
-    length = len(sorts)
-    if not length % 2:
-        return (sorts[length / 2] + sorts[length / 2 - 1]) / 2.0
-    return sorts[length / 2]
-
 def get_citation_metrics(citations):
     """calculates citation metrics from publication data numpy array"""
     citations.sort(reverse=True)
@@ -78,12 +72,8 @@ def get_citation_metrics(citations):
             h_index += 1
     total_citations = sum(citations)
     avg_cites = sum(citations)/len(citations)
-    median_cites = median(citations)
-    if len(citations) > 699:
-        limit_exceeded_flag=1
-    else:
-        limit_exceeded_flag=0
-    return h_index, total_citations, avg_cites, median_cites, limit_exceeded_flag
+    median_cites = np.median(citations)
+    return h_index, total_citations, avg_cites, median_cites
 
 def get_existingscientists_fromdb():
     """extracts names of scientists that have already been processed and inserted into
@@ -102,30 +92,29 @@ def insert_newdata_into_db(ecologist):
     """processes a profile and inserts citation metrics into the SQLite database"""
     GS_profile = get_Scholarprofile(ecologist[1])
     citations = get_citations(GS_profile)
-    h_index, total_citations, avg_cites, median_cites, paper_limit = get_citation_metrics(citations)
+    h_index, total_citations, avg_cites, median_cites = get_citation_metrics(citations)
     ecologist_data = [ecologist[0], ecologist[4], len(GS_profile), h_index, 
-                    total_citations, avg_cites, median_cites, paper_limit]
-    con = con=dbapi.connect('citation_metric.sqlite')
+                    total_citations, avg_cites, median_cites]
+    con = dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
-    cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?,?)", (ecologist[0],ecologist[4],len(GS_profile),h_index,total_citations,avg_cites, median_cites, paper_limit,))
+    cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?)", (ecologist[0],ecologist[4],len(GS_profile),h_index,total_citations,avg_cites, median_cites,))
     con.commit()    
     
 """main code"""
-#filename_input = "Google_ecology.csv"
-#ecologists = import_ecologists(filename_input)
-#processed_ecologists = get_existingscientists_fromdb()
-#for ecologist in ecologists:
-#    if ecologist[0] not in processed_ecologists:
-#        insert_newdata_into_db(ecologist)
-        
-#
-#testing particular entries
-filename_input = "problem_ecologist.csv"
+filename_input = "Google_ecology.csv"
 ecologists = import_ecologists(filename_input)
 processed_ecologists = get_existingscientists_fromdb()
 for ecologist in ecologists:
     if ecologist[0] not in processed_ecologists:
         insert_newdata_into_db(ecologist)
+        
+#testing particular entries
+#filename_input = "problem_ecologist.csv"
+#ecologists = import_ecologists(filename_input)
+#processed_ecologists = get_existingscientists_fromdb()
+#for ecologist in ecologists:
+#    if ecologist[0] not in processed_ecologists:
+#        insert_newdata_into_db(ecologist)
 
 
 
