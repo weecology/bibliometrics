@@ -36,6 +36,7 @@ def get_Scholarprofile(url):
         if len(temp_pubs) > 0:
             pubs_from_html = np.vstack([pubs_from_html, temp_pubs])
             i += 100
+            time.sleep(2)
         else:
             more_papers = False
     return pubs_from_html
@@ -106,7 +107,9 @@ ecologists = import_ecologists(filename_input)
 processed_ecologists = get_existingscientists_fromdb()
 for ecologist in ecologists:
     if ecologist[0] not in processed_ecologists:
-        insert_newdata_into_db(ecologist)
+        if ecologist[1]:
+            insert_newdata_into_db(ecologist)
+        
         
 #testing particular entries
 #filename_input = "problem_ecologist.csv"
