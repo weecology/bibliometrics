@@ -119,7 +119,10 @@ for ecologist in ecologists:
 #    if ecologist[0] not in processed_ecologists:
 #        insert_newdata_into_db(ecologist)
 
-
+con = dbapi.connect('citation_metric.sqlite')
+cur=con.cursor()
+citation_table=cur.execute("SELECT PhD_year, num_pubs, h_index, total_cites, avg_cites, median_cites FROM ecologist_metrics WHERE PhD_year > 0")
+record=cur.fetchall()
 
     
     
