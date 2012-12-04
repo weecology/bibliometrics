@@ -8,6 +8,8 @@ import time
 
 import numpy as np
 from bs4 import BeautifulSoup
+import matplotlib.pyplot as plt
+import pandas as pd
 
 def import_ecologists(filename):
     """import local file containing a Google Scholar profile in html format"""
@@ -123,7 +125,16 @@ con = dbapi.connect('citation_metric.sqlite')
 cur=con.cursor()
 citation_table=cur.execute("SELECT PhD_year, num_pubs, h_index, total_cites, avg_cites, median_cites FROM ecologist_metrics WHERE PhD_year > 0")
 record=cur.fetchall()
+citation_array=np.array(record,dtype=[('PhD_year', 'i4'),('num_pubs', 'i4'), 
+                                      ('h_index', 'i4'),( 'total_cites', 'i4'),
+                                      ('avg_cites', 'f8'), ('median_cites', 'f8')])
 
-    
+plt.plot(citation_array['PhD_year'], citation_array['h_index'] , 'bo')
+plt.show()
+
+data = pd.DataFrame(citation_array)
+results = sm.OLS.from_formula('h_index ~ PhD_year', citation_array).fit()
+print results.summary()
+
     
     
