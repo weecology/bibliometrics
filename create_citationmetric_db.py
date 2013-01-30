@@ -8,6 +8,7 @@ import time
 
 import numpy as np
 from bs4 import BeautifulSoup
+import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -22,7 +23,7 @@ def import_ecologists(filename):
     return data
 
 def get_Scholarprofile(url):
-    """Accesses Google Scholar profile, downloads up to 700 papers""" 
+    """Accesses Google Scholar profile, downloads data for all papers""" 
     pattern=((".*user=(.*)&hl=en"))
     user_id=re.search(pattern, url)
     google_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&view_op=list_works&pagesize=100"
@@ -43,12 +44,29 @@ def get_Scholarprofile(url):
             more_papers = False
     return pubs_from_html
 
+def get_institution(url):
+    pattern=((".*user=(.*)&hl=en"))
+    user_id=re.search(pattern, url)
+    google_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&view_op=list_works&pagesize=100"
+    html_file = urlopen(google_html).read()    
+    bs_object=BeautifulSoup(html_file)
+    form = bs_object.find("span", id="cit-affiliation-display")
+    affiliation = form.get_text()
+    parsed_affiliation =[x.strip() for x in affiliation.split(',')]
+    search_patterns = (("(.*[Uu]niv.*)"), ("(.*[Cc]olleg.*)"), ("(.*[Cc]entre.*)"),
+                       ("(.*[Cc]enter.*)"), ("(.*[Ii]nstit.*)"))
+    for item in parsed_affiliation:
+        for pattern in search_patterns:
+            institution = re.search(pattern, item)
+            if institution:
+                return institution.group() 
+                
 def extract_paperdata(profile_file):
     """parses out paper information from the profile html and outputs numpy array"""
     bs_test=BeautifulSoup(profile_file)
     table = bs_test.find("table", class_="cit-table")
     rows = table.findAll('tr')
-    data = [[td.findChildren(text=True) for td in tr.findAll("td")] for tr in rows]
+    data = [[td.get_text() for td in tr.findAll("td")] for tr in rows]
     del data[0]
     paper_num = len(data)
     data_array = np.array(data)    
@@ -58,13 +76,13 @@ def get_citations(paper_data):
     """takes numpy array containing paper info, extracts citation #s and converts to int"""
     citations = paper_data[:,2]
     num_pubs = len(citations)
-    citations = [int(i[0]) for i in citations if i]
-    num_citedpubs = len(citations)
+    int_citations = [int(i) for i in citations if i]
+    num_citedpubs = len(int_citations)
     num_zeros = num_pubs-num_citedpubs
     while num_zeros > 0:
-        citations.append(0)
+        int_citations.append(0)
         num_zeros -= 1
-    return citations
+    return int_citations
 
 def get_citation_metrics(citations):
     """calculates citation metrics from publication data numpy array"""
@@ -92,15 +110,18 @@ def get_existingscientists_fromdb():
     return set(existing_records)
 
 def insert_newdata_into_db(ecologist):
-    """processes a profile and inserts citation metrics into the SQLite database"""
+    """processes a Google Scholar profile and inserts citation metrics and 
+    ecologist info into the SQLite database"""
     GS_profile = get_Scholarprofile(ecologist[1])
+    min_year= min(GS_profile[:,4])
     citations = get_citations(GS_profile)
+    institution_info= get_institution(ecologist[1])
     h_index, total_citations, avg_cites, median_cites = get_citation_metrics(citations)
-    ecologist_data = [ecologist[0], ecologist[4], len(GS_profile), h_index, 
-                    total_citations, avg_cites, median_cites]
+    ecologist_data = [ecologist[0], ecologist[4], institution_info, min_year, 
+                      len(GS_profile), h_index, total_citations, avg_cites, median_cites]
     con = dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
-    cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?)", (ecologist[0],ecologist[4],len(GS_profile),h_index,total_citations,avg_cites, median_cites,))
+    cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?,?,?)", (ecologist[0], ecologist[4], institution_info, min_year, len(GS_profile),h_index,total_citations,avg_cites, median_cites,))
     con.commit()    
     
 """main code"""
@@ -111,30 +132,7 @@ for ecologist in ecologists:
     if ecologist[0] not in processed_ecologists:
         if ecologist[1]:
             insert_newdata_into_db(ecologist)
-        
-        
-#testing particular entries
-#filename_input = "problem_ecologist.csv"
-#ecologists = import_ecologists(filename_input)
-#processed_ecologists = get_existingscientists_fromdb()
-#for ecologist in ecologists:
-#    if ecologist[0] not in processed_ecologists:
-#        insert_newdata_into_db(ecologist)
 
-con = dbapi.connect('citation_metric.sqlite')
-cur=con.cursor()
-citation_table=cur.execute("SELECT PhD_year, num_pubs, h_index, total_cites, avg_cites, median_cites FROM ecologist_metrics WHERE PhD_year > 0")
-record=cur.fetchall()
-citation_array=np.array(record,dtype=[('PhD_year', 'i4'),('num_pubs', 'i4'), 
-                                      ('h_index', 'i4'),( 'total_cites', 'i4'),
-                                      ('avg_cites', 'f8'), ('median_cites', 'f8')])
-
-plt.plot(citation_array['PhD_year'], citation_array['h_index'] , 'bo')
-plt.show()
-
-data = pd.DataFrame(citation_array)
-results = sm.OLS.from_formula('h_index ~ PhD_year', citation_array).fit()
-print results.summary()
 
     
     
