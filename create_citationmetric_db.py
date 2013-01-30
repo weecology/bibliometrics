@@ -22,29 +22,6 @@ def import_ecologists(filename):
     del data[0]
     return data
 
-def get_Scholarprofile(url):
-    """Accesses Google Scholar profile, downloads data for all papers"""
-    #refactor this function to just compile the Profile
-    pattern=((".*user=(.*)&hl=en"))
-    user_id=re.search(pattern, url)
-    google_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&view_op=list_works&pagesize=100"
-    html_file = urlopen(google_html).read()
-    pubs_from_html=extract_paperdata(html_file)
-    i=100
-    more_papers = True
-    while more_papers:
-        str_i=str(i)
-        iterable_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&pagesize=100&view_op=list_works&cstart=" + str_i
-        html_file=urlopen(iterable_html).read()
-        temp_pubs=extract_paperdata(html_file)
-        if len(temp_pubs) > 0:
-            pubs_from_html = np.vstack([pubs_from_html, temp_pubs])
-            i += 100
-            time.sleep(2)
-        else:
-            more_papers = False
-    return pubs_from_html
-
 def get_institution(url):
     pattern=((".*user=(.*)&hl=en"))
     user_id=re.search(pattern, url)
@@ -124,15 +101,57 @@ def insert_newdata_into_db(ecologist):
     cur = con.cursor()
     cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?,?,?)", (ecologist[0], ecologist[4], institution_info, min_year, len(GS_profile),h_index,total_citations,avg_cites, median_cites,))
     con.commit()    
+
+def notalready_in_database(ecologist, processed_ecologists):
+    """Checked to see if ecologist has already been processed and whether html
+    address exists for that ecolosist"""
+    if ecologist[0] not in processed_ecologists:
+        if ecologist[1]:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def access_profile_page(url, i):
+    """access Google Scholar Profile page and is designed to be used in an iterative
+    fashion. i allows main code to keep asscessing profile if papers > 100"""
+    #ask Ethan how to modify this so that if no i, then str_i set to 0
+    str_i = str(i)
+    pattern=((".*user=(.*)&hl=en"))
+    user_id=re.search(pattern, url)
+    google_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&pagesize=100&view_op=list_works&cstart=" + str_i
+    html_file = urlopen(google_html).read()
+    return html_file
+
+def processing_pubs(first_page, counter, url):
+    pubs_from_html=extract_paperdata(first_page)
+    counter = 100
+    more_papers = True
+    while more_papers:
+        html_page = access_profile_page(url, counter)
+        temp_pubs=extract_paperdata(html_page)
+        if len(temp_pubs) > 0:
+            pubs_from_html = np.vstack([pubs_from_html, temp_pubs])
+            counter += 100
+            time.sleep(2)
+        else:
+            more_papers = False
+    return pubs_from_html         
     
 """main code"""
-filename_input = "Google_ecology.csv"
+filename_input = "Google_test.csv"
 ecologists = import_ecologists(filename_input)
 processed_ecologists = get_existingscientists_fromdb()
 for ecologist in ecologists:
-    if ecologist[0] not in processed_ecologists:
-        if ecologist[1]:
-            insert_newdata_into_db(ecologist)
+    not_in_database = notalready_in_database(ecologist, processed_ecologists)
+    if not_in_database:
+        url = ecologist[1]
+        i=0
+        first_html_page = access_profile_page(url, i)
+        pubs_data = processing_pubs(first_html_page, i, url)
+        #add institution scraping here, current function not working now
+        #add keyword scraping here        
 
 
     
