@@ -22,12 +22,8 @@ def import_ecologists(filename):
     del data[0]
     return data
 
-def get_institution(url):
-    pattern=((".*user=(.*)&hl=en"))
-    user_id=re.search(pattern, url)
-    google_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&view_op=list_works&pagesize=100"
-    html_file = urlopen(google_html).read()    
-    bs_object=BeautifulSoup(html_file)
+def get_institution(first_profile_page):
+    bs_object=BeautifulSoup(first_profile_page)
     form = bs_object.find("span", id="cit-affiliation-display")
     affiliation = form.get_text()
     parsed_affiliation =[x.strip() for x in affiliation.split(',')]
@@ -150,7 +146,7 @@ for ecologist in ecologists:
         i=0
         first_html_page = access_profile_page(url, i)
         pubs_data = processing_pubs(first_html_page, i, url)
-        #add institution scraping here, current function not working now
+        institution = get_institution(first_html_page)
         #add keyword scraping here        
 
 
