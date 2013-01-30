@@ -110,6 +110,7 @@ def get_existingscientists_fromdb():
     return set(existing_records)
 
 def insert_newdata_into_db(ecologist):
+    #notes: split out the scholar profile creation from the citation bibliometrics
     """processes a Google Scholar profile and inserts citation metrics and 
     ecologist info into the SQLite database"""
     GS_profile = get_Scholarprofile(ecologist[1])
