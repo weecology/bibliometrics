@@ -23,7 +23,8 @@ def import_ecologists(filename):
     return data
 
 def get_Scholarprofile(url):
-    """Accesses Google Scholar profile, downloads data for all papers""" 
+    """Accesses Google Scholar profile, downloads data for all papers"""
+    #refactor this function to just compile the Profile
     pattern=((".*user=(.*)&hl=en"))
     user_id=re.search(pattern, url)
     google_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&view_op=list_works&pagesize=100"
