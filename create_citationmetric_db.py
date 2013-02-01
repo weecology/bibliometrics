@@ -8,9 +8,6 @@ import time
 
 import numpy as np
 from bs4 import BeautifulSoup
-import statsmodels.api as sm
-import matplotlib.pyplot as plt
-import pandas as pd
 
 def import_ecologists(filename):
     """import local file containing a Google Scholar profile in html format"""
