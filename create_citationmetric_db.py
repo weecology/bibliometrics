@@ -74,6 +74,7 @@ def processing_pubs(first_page, counter, url):
     return pubs_from_html      
 
 def get_institution(first_profile_page):
+    """strips institution info from Google Scholar profile"""
     bs_object=BeautifulSoup(first_profile_page)
     form = bs_object.find("span", id="cit-affiliation-display")
     affiliation = form.get_text()
@@ -85,6 +86,18 @@ def get_institution(first_profile_page):
             institution = re.search(pattern, item)
             if institution:
                 return institution.group() 
+
+def create_keyword_db(html_file, user_id):
+    """strips keywords from Google Scholar Profile and inserts into keyword database"""
+    bs_object=BeautifulSoup(html_file)
+    keyword_form = bs_object.find("form", id="cit-int-form")
+    keywords_text = keyword_form.get_text()
+    parsed_keyword =[x.strip() for x in keywords_text.split('-')]
+    for keyword in parsed_keyword:
+        con = dbapi.connect('citation_metric.sqlite')
+        cur = con.cursor()
+        cur.execute("INSERT INTO ecologist_keywords VALUES(?,?)", (user_id, keyword,))
+        con.commit()    
                 
 def extract_paperdata(profile_file):
     """parses out paper information from the profile html and outputs numpy array"""
@@ -110,6 +123,8 @@ def get_citations(paper_data):
     return int_citations
 
 def get_min_year(pub_data):
+    """takes publication year from paper array, converts to integer and calculates
+    first year of publication"""
     years = pub_data[:,4]
     int_years = [int(i) for i in years if i]
     min_year = min(int_years)
@@ -154,7 +169,7 @@ for ecologist in ecologists:
         first_html_page = access_profile_page(user_id, i)
         pubs_data = processing_pubs(first_html_page, i, user_id)
         institution = get_institution(first_html_page)
-        #add keyword scraping here
+        create_keyword_db(first_html_page, user_id)
         insert_newdata_into_db(pubs_data, ecologist, institution, user_id)
 
 
