@@ -133,13 +133,13 @@ def get_pub_metrics(pub_data):
     h_index, total_citations, avg_cites, median_cites = get_citation_metrics(citations)
     return first_year, h_index, total_citations, avg_cites, median_cites
     
-def insert_newdata_into_db(pub_data, ecologist, institution):
+def insert_newdata_into_db(pub_data, ecologist, institution, user_id):
     """processes publication data and inserts citation metrics and 
     ecologist info into the SQLite database"""
     first_year, h_index, total_citations, avg_cites, median_cites = get_pub_metrics(pub_data)
     con = dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
-    cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?,?,?,?)", (ecologist[0], ecologist[4], institution, ecologist[2], first_year, len(pub_data),h_index,total_citations,avg_cites, median_cites,))
+    cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?,?,?,?,?)", (user_id, ecologist[0], ecologist[4], institution, ecologist[2], first_year, len(pub_data),h_index,total_citations,avg_cites, median_cites,))
     con.commit()     
     
 """main code"""
@@ -155,8 +155,7 @@ for ecologist in ecologists:
         pubs_data = processing_pubs(first_html_page, i, user_id)
         institution = get_institution(first_html_page)
         #add keyword scraping here
-        #add user ID scraping
-        insert_newdata_into_db(pubs_data, ecologist, institution)
+        insert_newdata_into_db(pubs_data, ecologist, institution, user_id)
 
 
     
