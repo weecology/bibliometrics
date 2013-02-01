@@ -43,14 +43,17 @@ def notalready_in_database(ecologist, processed_ecologists):
     else:
         return False
 
-def access_profile_page(url, i):
+def extract_GoogleID(url):
+    pattern=((".*user=(.*)&hl=en"))
+    user_id=re.search(pattern, url)
+    return user_id.group(1)
+    
+def access_profile_page(ID, i):
     """access Google Scholar Profile page and is designed to be used in an iterative
     fashion. i allows main code to keep asscessing profile if papers > 100"""
     #ask Ethan how to modify this so that if no i, then str_i set to 0
     str_i = str(i)
-    pattern=((".*user=(.*)&hl=en"))
-    user_id=re.search(pattern, url)
-    google_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&pagesize=100&view_op=list_works&cstart=" + str_i
+    google_html="http://scholar.google.com/citations?hl=en&user=" + ID + "&pagesize=100&view_op=list_works&cstart=" + str_i
     html_file = urlopen(google_html).read()
     return html_file
 
@@ -146,12 +149,13 @@ processed_ecologists = get_existingscientists_fromdb()
 for ecologist in ecologists:
     not_in_database = notalready_in_database(ecologist, processed_ecologists)
     if not_in_database:
-        url = ecologist[1]
+        user_id = extract_GoogleID(ecologist[1])
         i = 0
-        first_html_page = access_profile_page(url, i)
-        pubs_data = processing_pubs(first_html_page, i, url)
+        first_html_page = access_profile_page(user_id, i)
+        pubs_data = processing_pubs(first_html_page, i, user_id)
         institution = get_institution(first_html_page)
         #add keyword scraping here
+        #add user ID scraping
         insert_newdata_into_db(pubs_data, ecologist, institution)
 
 
