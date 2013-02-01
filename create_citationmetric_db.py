@@ -136,7 +136,7 @@ def insert_newdata_into_db(pub_data, ecologist, institution):
     first_year, h_index, total_citations, avg_cites, median_cites = get_pub_metrics(pub_data)
     con = dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
-    cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?,?,?)", (ecologist[0], ecologist[4], institution, first_year, len(pub_data),h_index,total_citations,avg_cites, median_cites,))
+    cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?,?,?,?)", (ecologist[0], ecologist[4], institution, ecologist[2], first_year, len(pub_data),h_index,total_citations,avg_cites, median_cites,))
     con.commit()     
     
 """main code"""
