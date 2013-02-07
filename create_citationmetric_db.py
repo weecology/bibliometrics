@@ -158,7 +158,7 @@ def insert_newdata_into_db(pub_data, ecologist, institution, user_id):
     con.commit()     
     
 """main code"""
-filename_input = "Google_test.csv"
+filename_input = "Google_ecology.csv"
 ecologists = import_ecologists(filename_input)
 processed_ecologists = get_existingscientists_fromdb()
 for ecologist in ecologists:
