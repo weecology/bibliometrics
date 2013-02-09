@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 def import_csv(filename):
+    """reads in csv file and returns list of lists"""
     infile = open(filename, "rb")
     datareader = csv.reader(infile)
     data = []
@@ -17,6 +18,8 @@ def import_csv(filename):
     return data  
 
 def create_institution_type_dictionary(data):
+    """creates dictionary of institution name and institution type from the 
+    Carnegie file"""
     institution_type_dict = {}
     for row in Carnegie_data:
         Institution = row[1]
@@ -25,8 +28,8 @@ def create_institution_type_dictionary(data):
     return institution_type_dict
 
 def get_processedinstitutions_fromdb():
-    """extracts names of institutions scraped from google profile that have 
-    already been processed and inserted into the database"""
+    """extracts names of institutions from institution table of citation_metrics 
+    database and returns values as a set"""
     con=dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
     cur.execute("SELECT google_institution FROM institution_link")
@@ -42,6 +45,8 @@ def get_processedinstitutions_fromdb():
     return set(processed_institutions)
 
 def get_raw_institutions_fromdb():
+    """obtains institution name from ecologist table and processes to remove unicode
+    formatting. Returns a list of lists."""
     con=dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
     existing_data = cur.execute("SELECT institution FROM ecologist_metrics")
@@ -58,20 +63,24 @@ def get_raw_institutions_fromdb():
     return google_institutions
 
 def notalready_in_database(record, processed_data):
-    """Checked to see if ecologist has already been processed and whether html
-    address exists for that ecolosist"""
+    """Checks to see if institution has already been processed"""
     if record not in processed_data:
         return True
     else:
         return False
 
 def quick_code_strip(record):
+    """strips unicode formatting by ignoring errors during decoding unicode"""
     decoded = record.encode('utf-8')
     unicoded = unicode(decoded, errors = 'ignore')
     stringed = str(unicoded)
     return stringed
 
 def apply_first_filter(raw_names, processed_names):
+    """This first filter assesses whether the institution name from the 
+    ecologist table matches institution names in the Carnegie data. If yes, then
+    institution name and carnegie institution type into the institution table.
+    Returns list of institution names that did not match carnegie list"""
     bad_names = []
     con=dbapi.connect('citation_metric.sqlite')
     cur1 = con.cursor()
