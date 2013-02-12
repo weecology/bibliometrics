@@ -133,6 +133,3 @@ keyword_data = get_keywords_fromdb()
 keyword_set = make_keyword_set(keyword_data)
 keyword_dictionary = create_keyword_dictionary(keyword_set)
 insert_keyword_subdiscipline_db_table(keyword_set, keyword_dictionary) 
-
-
-
