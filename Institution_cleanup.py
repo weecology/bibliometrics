@@ -4,9 +4,6 @@ import csv
 import re
 import sqlite3 as dbapi
 
-import numpy as np
-import pandas as pd
-
 def import_csv(filename):
     """reads in csv file and returns list of lists"""
     infile = open(filename, "rb")
