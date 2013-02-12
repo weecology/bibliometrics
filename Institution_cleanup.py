@@ -103,17 +103,19 @@ def apply_first_filter(raw_names, processed_names):
 
 def remove_obvious_foreign_names(bad_names):
     """filters out institute names with general foreign identifiers"""
-    patterns = ['[Ii]nstituto', '[Cc]entre', '[Uu]niversidad', '[Uu]niversite',
-                '[Uu]niversita', '[Uu]niversidade', '[Uu]niversit degli']
-    foreign = []
+    patterns = ['Instituto', 'Centre', 'Universidad', 'Universite',
+                'Universita', 'Universidade', 'Universit degli', 'Universit de']
     new_badnames = []
+    
     for i in bad_names:
+        pattern_alert = 0
         for p in patterns:
             pattern_match = re.search(p, i[1])
             if pattern_match:
-                foreign.append(pattern_match)
-            else:
-                new_badnames.append(i)
+                pattern_alert +=1
+        if pattern_alert == 0:
+            new_badnames.append(i)
+            
     return new_badnames
 
 def make_csv(filename, data):
