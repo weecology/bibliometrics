@@ -104,7 +104,10 @@ def apply_first_filter(raw_names, processed_names):
 def remove_obvious_foreign_names(bad_names):
     """filters out institute names with general foreign identifiers"""
     patterns = ['Instituto', 'Centre', 'Universidad', 'Universite',
-                'Universita', 'Universidade', 'Universit degli', 'Universit de']
+                'Universita', 'Universidade', 'Universit degli', 'Universit de',
+                'Australia', 'Czech', 'Finish', 'Malaysia', 'Institut de', 
+                'Singapore', 'Netherlands', 'Norweigian', 'African', 
+                'KwaZulu-Natal', 'Swedish', 'Universit di', 'Finland']
     new_badnames = []
     
     for i in bad_names:
