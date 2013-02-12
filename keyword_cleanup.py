@@ -7,7 +7,7 @@ import sqlite3 as dbapi
 import pandas as pd
 
 def get_keywords_fromdb():
-    """extracts keywords from ecologist table of citation_metrics 
+    """extracts keywords from ecologist_keywords table of citation_metrics 
     database and returns values"""
     con=dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
@@ -24,7 +24,7 @@ def get_keywords_fromdb():
     return raw_keywords
 
 def notalready_in_database(keyword):
-    """Checks to see if user/keyword combo has already been processed"""
+    """Checks to see if keyword has already been processed"""
     processed_data = get_processeddata_fromdb()
     if processed_data:
         processed_keywords = set(processed_data)              
@@ -36,7 +36,7 @@ def notalready_in_database(keyword):
         return True
 
 def get_processeddata_fromdb():
-    """extracts userID and keyword from keyword_link table"""
+    """returns keywords from keyword_link table as list"""
     con=dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
     cur.execute("SELECT ecologist_keyword FROM keyword_link")
@@ -66,7 +66,8 @@ def quick_code_strip(record):
     return stringed
 
 def make_keyword_set(data):
-    """returns a set of unique keywords that are in table ecologist_keywords"""
+    """returns a set of unique  (and lacking unicode codes) keywords that are in 
+    table ecologist_keywords"""
     unique_keywords = set(data)  
     cleaned_keywords = []
     for item in unique_keywords:
@@ -108,10 +109,12 @@ def create_keyword_dictionary(data):
     return keyword_dictionary  
 
 def get_subdiscipline(item, dictionary):
+    """checks to see if item is in the dictionary, returns False if missing"""
     subdiscipline = dictionary.get(item, False)
     return subdiscipline      
 
-def make_keyword_subdiscipline_link(data_set, dictionary):
+def insert_keyword_subdiscipline_db_table(data_set, dictionary):
+    """inserts new keywords and their subdisipline into the keyword_link table"""
     con=dbapi.connect('citation_metric.sqlite')
     cur = con.cursor()
     not_in_dictionary = []
@@ -129,7 +132,7 @@ def make_keyword_subdiscipline_link(data_set, dictionary):
 keyword_data = get_keywords_fromdb()
 keyword_set = make_keyword_set(keyword_data)
 keyword_dictionary = create_keyword_dictionary(keyword_set)
-make_keyword_subdiscipline_link(keyword_set, keyword_dictionary) 
+insert_keyword_subdiscipline_db_table(keyword_set, keyword_dictionary) 
 
 
 
