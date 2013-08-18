@@ -22,7 +22,6 @@ def import_ecologists(filename):
     del data[0]
     return data
 
-<<<<<<< HEAD
 def get_Scholarprofile(url):
     """Accesses Google Scholar profile, downloads data for all papers""" 
     pattern=((".*user=(.*)&hl=en"))
@@ -51,61 +50,6 @@ def get_institution(url):
     google_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&view_op=list_works&pagesize=100"
     html_file = urlopen(google_html).read()    
     bs_object=BeautifulSoup(html_file)
-=======
-def get_existingscientists_fromdb():
-    """extracts names of scientists that have already been processed and inserted into
-    the database"""
-    con=dbapi.connect('citation_metric.sqlite')
-    cur = con.cursor()
-    existing_data=cur.execute("SELECT name FROM ecologist_metrics")
-    record=cur.fetchone()
-    existing_records=[]
-    while record:
-        existing_records.extend(record)
-        record=cur.fetchone()
-    return set(existing_records)
-
-def notalready_in_database(ecologist, processed_ecologists):
-    """Checked to see if ecologist has already been processed and whether html
-    address exists for that ecolosist"""
-    if ecologist[0] not in processed_ecologists:
-        if ecologist[1]:
-            return True
-        else:
-            return False
-    else:
-        return False
-
-def access_profile_page(url, i):
-    """access Google Scholar Profile page and is designed to be used in an iterative
-    fashion. i allows main code to keep asscessing profile if papers > 100"""
-    #ask Ethan how to modify this so that if no i, then str_i set to 0
-    str_i = str(i)
-    pattern=((".*user=(.*)&hl=en"))
-    user_id=re.search(pattern, url)
-    google_html="http://scholar.google.com/citations?hl=en&user=" + user_id.group(1) + "&pagesize=100&view_op=list_works&cstart=" + str_i
-    html_file = urlopen(google_html).read()
-    return html_file
-
-def processing_pubs(first_page, counter, url):
-    """extracts paper data from Google Scholar profile"""
-    pubs_from_html=extract_paperdata(first_page)
-    counter = 100
-    more_papers = True
-    while more_papers:
-        html_page = access_profile_page(url, counter)
-        temp_pubs=extract_paperdata(html_page)
-        if len(temp_pubs) > 0:
-            pubs_from_html = np.vstack([pubs_from_html, temp_pubs])
-            counter += 100
-            time.sleep(2)
-        else:
-            more_papers = False
-    return pubs_from_html      
-
-def get_institution(first_profile_page):
-    bs_object=BeautifulSoup(first_profile_page)
->>>>>>> origin/Profile_refactor
     form = bs_object.find("span", id="cit-affiliation-display")
     affiliation = form.get_text()
     parsed_affiliation =[x.strip() for x in affiliation.split(',')]
@@ -140,15 +84,6 @@ def get_citations(paper_data):
         num_zeros -= 1
     return int_citations
 
-<<<<<<< HEAD
-=======
-def get_min_year(pub_data):
-    years = pub_data[:,4]
-    int_years = [int(i) for i in years if i]
-    min_year = min(int_years)
-    return min_year
-    
->>>>>>> origin/Profile_refactor
 def get_citation_metrics(citations):
     """calculates citation metrics from publication data numpy array"""
     citations.sort(reverse=True)
@@ -161,7 +96,6 @@ def get_citation_metrics(citations):
     median_cites = np.median(citations)
     return h_index, total_citations, avg_cites, median_cites
 
-<<<<<<< HEAD
 def get_existingscientists_fromdb():
     """extracts names of scientists that have already been processed and inserted into
     the database"""
@@ -176,7 +110,6 @@ def get_existingscientists_fromdb():
     return set(existing_records)
 
 def insert_newdata_into_db(ecologist):
-    #notes: split out the scholar profile creation from the citation bibliometrics
     """processes a Google Scholar profile and inserts citation metrics and 
     ecologist info into the SQLite database"""
     GS_profile = get_Scholarprofile(ecologist[1])
@@ -199,37 +132,6 @@ for ecologist in ecologists:
     if ecologist[0] not in processed_ecologists:
         if ecologist[1]:
             insert_newdata_into_db(ecologist)
-=======
-def get_pub_metrics(pub_data):
-    citations = get_citations(pub_data)
-    first_year = get_min_year(pub_data)
-    h_index, total_citations, avg_cites, median_cites = get_citation_metrics(citations)
-    return first_year, h_index, total_citations, avg_cites, median_cites
-    
-def insert_newdata_into_db(pub_data, ecologist, institution):
-    """processes publication data and inserts citation metrics and 
-    ecologist info into the SQLite database"""
-    first_year, h_index, total_citations, avg_cites, median_cites = get_pub_metrics(pub_data)
-    con = dbapi.connect('citation_metric.sqlite')
-    cur = con.cursor()
-    cur.execute("INSERT INTO ecologist_metrics VALUES(?,?,?,?,?,?,?,?,?)", (ecologist[0], ecologist[4], institution, first_year, len(pub_data),h_index,total_citations,avg_cites, median_cites,))
-    con.commit()     
-    
-"""main code"""
-filename_input = "Google_test.csv"
-ecologists = import_ecologists(filename_input)
-processed_ecologists = get_existingscientists_fromdb()
-for ecologist in ecologists:
-    not_in_database = notalready_in_database(ecologist, processed_ecologists)
-    if not_in_database:
-        url = ecologist[1]
-        i = 0
-        first_html_page = access_profile_page(url, i)
-        pubs_data = processing_pubs(first_html_page, i, url)
-        institution = get_institution(first_html_page)
-        #add keyword scraping here
-        insert_newdata_into_db(pubs_data, ecologist, institution)
->>>>>>> origin/Profile_refactor
 
 
     
